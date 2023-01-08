@@ -162,14 +162,14 @@ const Home: NextPage = () => {
         
         <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 text-3xl">
           {gameOver && <><div className="text-red-500">Game Over</div><div>Final Score: {points}</div></>}
-          {gameStart && !gameOver && <><div>Type an english word containing: {rule}</div><div>Time left: {timeLeft}</div> </>}
+          {gameStart && !gameOver && <><div>Type an English word containing: {rule}</div><div>Time left: {timeLeft}</div> </>}
         </div>
         <div className=" m-x-auto mb-12" >
         <Img style={{animationPlayState: (gameStart && !gameOver)   ? "running" : "paused"}} src="bomb.svg" width={"128px"}></Img>
         </div>
       
         <div style={{minHeight: "24px"}} className="flex gap-1" >
-        {[...guess].map((element, key) => <div key={key} className="bg-gray-400 w-5 uppercase text-center text-gray-800">{element}</div>)}
+        {[...guess].map((element, key) => <div key={key} className="bg-gray-400 w-5 py-2 px-3 rounded-sm  font-bold  uppercase text-gray-800 flex align-middle justify-center">{element}</div>)}
         </div>
         <div className="flex  justify-between  w-96 mt-2">
         {gameStart && <><div>Health: <Heart health={health}/></div><div> Points: {points}</div></>}
