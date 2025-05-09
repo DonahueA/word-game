@@ -6,18 +6,21 @@ import {Howl} from 'howler';
 import styled, {keyframes} from "styled-components";
 
 const press = new Howl({
-  src: ['/sounds/switch21.wav']
+  src: ['/sounds/switch21.wav'],
+  volume: 1
 });
 
 const correct = new Howl({
-  src: ['/sounds/correct.mp3']
+  src: ['/sounds/correct.mp3'],
+  volume: 1
 });
 
 const incorrect = new Howl({
-  src: ['/sounds/incorrect.mp3']
+  src: ['/sounds/incorrect.mp3'],
+  volume: 1
 });
 
-const pulse  = keyframes`
+const pulse = keyframes`
   0% {
     scale: 1;
   }
@@ -27,30 +30,112 @@ const pulse  = keyframes`
   100% {
     scale: 1;
   }
-`
+`;
 
-const Heart = (props: {health: number}) =>{
+const Img = styled.img`
+  transform-origin: center;
+  animation: ${pulse} 0.3s infinite;
+`;
 
+const VolumeSlider = styled.input`
+  width: 60px;
+  height: 4px;
+  -webkit-appearance: none;
+  background: #4a4a4a;
+  border-radius: 2px;
+  outline: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  position: absolute;
+  left: 40px;
+  z-index: 1;
+  
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  &::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+  }
+`;
+
+const VolumeButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  color: white;
+  font-size: 1.2rem;
+  transition: opacity 0.2s;
+  z-index: 2;
+
+  &:hover {
+    opacity: 0.8;
+  }
+`;
+
+const VolumeContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  cursor: pointer;
+  position: relative;
+  
+  &:hover ${VolumeSlider} {
+    opacity: 1;
+  }
+`;
+
+const Heart = (props: {health: number}) => {
   return <div className="flex gap-1">
     <img src="heart.svg" width={'24px'}  style={{filter: props.health< 1 ? "grayscale(100%)" : ""}}/>
     <img src="heart.svg" width={'24px'} style={{filter: props.health< 2 ? "grayscale(100%)" : ""}}/>
-    
     <img src="heart.svg" width={'24px'} style={{filter: props.health< 3 ? "grayscale(100%)" : ""}} />
-    
-    
   </div>
-}
-
+};
 
 const Home: NextPage = () => {
-
   const [guess, setGuess] = useState("");
   const [rule, setRule] = useState("");
   const [health, setHealth] = useState(3);
-  const [points, setPoints] =useState(0);
+  const [points, setPoints] = useState(0);
   const [timeLeft, setTimeLeft] = useState(5);
   const [gameOver, setGameOver] = useState(false);
   const [gameStart, setGameStart] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [previousVolume, setPreviousVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+
+  useEffect(() => {
+    press.volume(volume);
+    correct.volume(volume);
+    incorrect.volume(volume);
+  }, [volume]);
+
+  const handleMuteToggle = () => {
+    if (isMuted) {
+      setVolume(previousVolume);
+      setIsMuted(false);
+    } else {
+      setPreviousVolume(volume);
+      setVolume(0);
+      setIsMuted(true);
+    }
+  };
 
   async function handleGuess(e: React.KeyboardEvent<HTMLElement> | KeyboardEvent) {
     if(e.key == "Enter" && !gameOver){
@@ -171,8 +256,37 @@ const Home: NextPage = () => {
         <div style={{minHeight: "24px"}} className="flex gap-1" >
         {[...guess].map((element, key) => <div key={key} className="bg-gray-400 w-5 py-2 px-3 rounded-sm  font-bold  uppercase text-gray-800 flex align-middle justify-center">{element}</div>)}
         </div>
-        <div className="flex  justify-between  w-96 mt-2">
-        {gameStart && <><div>Health: <Heart health={health}/></div><div> Points: {points}</div></>}
+        <div className="flex justify-between w-96 mt-2 items-center">
+          {gameStart && (
+            <>
+              <div>Health: <Heart health={health}/></div>
+              <div>Points: {points}</div>
+              <VolumeContainer onClick={(e: React.MouseEvent) => {
+                if (!(e.target as HTMLElement).closest('button')) {
+                  handleMuteToggle();
+                }
+              }}>
+                <VolumeButton onClick={handleMuteToggle}>
+                  {isMuted ? '🔇' : volume === 0 ? '🔈' : '🔊'}
+                </VolumeButton>
+                <VolumeSlider
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={volume}
+                  onChange={(e) => {
+                    const newVolume = parseFloat(e.target.value);
+                    setVolume(newVolume);
+                    if (newVolume > 0) {
+                      setIsMuted(false);
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </VolumeContainer>
+            </>
+          )}
         </div>
         {!gameStart && <div><button onClick={handleStartGame} className="text-5xl">Click to Start</button></div>}
         
@@ -184,18 +298,5 @@ const Home: NextPage = () => {
     </>
   );
 };
-
-
-const Input = styled.input`
-  border-radius: 3px;
-  border: solid;
-  border-color: blue;
-`
-const Img = styled.img`
-transform-origin: center;
-
-animation: ${pulse} 0.3s infinite;
-`
-
 
 export default Home;
