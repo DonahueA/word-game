@@ -3,54 +3,58 @@ import Head from "next/head";
 import { useEffect, useState } from "react";
 import { isEnglish , generateRule} from "../util/util";
 import {Howl} from 'howler';
-import styled, {keyframes} from "styled-components";
 
 const press = new Howl({
-  src: ['/sounds/switch21.wav']
+  src: ['/sounds/switch21.wav'],
+  volume: 1
 });
 
 const correct = new Howl({
-  src: ['/sounds/correct.mp3']
+  src: ['/sounds/correct.mp3'],
+  volume: 1
 });
 
 const incorrect = new Howl({
-  src: ['/sounds/incorrect.mp3']
+  src: ['/sounds/incorrect.mp3'],
+  volume: 1
 });
 
-const pulse  = keyframes`
-  0% {
-    scale: 1;
-  }
-  90% {
-    scale: 1.15
-  }
-  100% {
-    scale: 1;
-  }
-`
-
-const Heart = (props: {health: number}) =>{
-
+const Heart = (props: {health: number}) => {
   return <div className="flex gap-1">
     <img src="heart.svg" width={'24px'}  style={{filter: props.health< 1 ? "grayscale(100%)" : ""}}/>
     <img src="heart.svg" width={'24px'} style={{filter: props.health< 2 ? "grayscale(100%)" : ""}}/>
-    
     <img src="heart.svg" width={'24px'} style={{filter: props.health< 3 ? "grayscale(100%)" : ""}} />
-    
-    
   </div>
-}
-
+};
 
 const Home: NextPage = () => {
-
   const [guess, setGuess] = useState("");
   const [rule, setRule] = useState("");
   const [health, setHealth] = useState(3);
-  const [points, setPoints] =useState(0);
+  const [points, setPoints] = useState(0);
   const [timeLeft, setTimeLeft] = useState(5);
   const [gameOver, setGameOver] = useState(false);
   const [gameStart, setGameStart] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [previousVolume, setPreviousVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+
+  useEffect(() => {
+    press.volume(volume);
+    correct.volume(volume);
+    incorrect.volume(volume);
+  }, [volume]);
+
+  const handleMuteToggle = () => {
+    if (isMuted) {
+      setVolume(previousVolume);
+      setIsMuted(false);
+    } else {
+      setPreviousVolume(volume);
+      setVolume(0);
+      setIsMuted(true);
+    }
+  };
 
   async function handleGuess(e: React.KeyboardEvent<HTMLElement> | KeyboardEvent) {
     if(e.key == "Enter" && !gameOver){
@@ -165,14 +169,69 @@ const Home: NextPage = () => {
           {gameStart && !gameOver && <><div>Type an English word containing: {rule}</div><div>Time left: {timeLeft}</div> </>}
         </div>
         <div className=" m-x-auto mb-12" >
-        <Img style={{animationPlayState: (gameStart && !gameOver)   ? "running" : "paused"}} src="bomb.svg" width={"128px"}></Img>
+        <img 
+          src="bomb.svg" 
+          width={"128px"} 
+          className={`${(gameStart && !gameOver) ? "animate-tick" : ""}`}
+          style={{
+            display: "inline-block"
+          }}
+        />
         </div>
       
-        <div style={{minHeight: "24px"}} className="flex gap-1" >
+        <div className="h-12 flex items-center gap-1">
         {[...guess].map((element, key) => <div key={key} className="bg-gray-400 w-5 py-2 px-3 rounded-sm  font-bold  uppercase text-gray-800 flex align-middle justify-center">{element}</div>)}
         </div>
-        <div className="flex  justify-between  w-96 mt-2">
-        {gameStart && <><div>Health: <Heart health={health}/></div><div> Points: {points}</div></>}
+        <div className="flex justify-between w-96 mt-2 items-center">
+          {gameStart && (
+            <>
+              <div>Health: <Heart health={health}/></div>
+              <div>Points: {points}</div>
+              <div 
+                className="relative flex items-center gap-2 p-2 cursor-pointer group"
+                onClick={(e: React.MouseEvent) => {
+                  if (!(e.target as HTMLElement).closest('button')) {
+                    handleMuteToggle();
+                  }
+                }}
+              >
+                <button 
+                  onClick={handleMuteToggle}
+                  className="text-xl hover:opacity-80 transition-opacity z-10"
+                >
+                  {isMuted ? '🔇' : volume === 0 ? '🔈' : '🔊'}
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={volume}
+                  onChange={(e) => {
+                    const newVolume = parseFloat(e.target.value);
+                    setVolume(newVolume);
+                    if (newVolume > 0) {
+                      setIsMuted(false);
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute left-10 w-[60px] h-1 bg-gray-600 rounded-full appearance-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity
+                    [&::-webkit-slider-thumb]:appearance-none
+                    [&::-webkit-slider-thumb]:w-3
+                    [&::-webkit-slider-thumb]:h-3
+                    [&::-webkit-slider-thumb]:bg-white
+                    [&::-webkit-slider-thumb]:rounded-full
+                    [&::-webkit-slider-thumb]:cursor-pointer
+                    [&::-moz-range-thumb]:w-3
+                    [&::-moz-range-thumb]:h-3
+                    [&::-moz-range-thumb]:bg-white
+                    [&::-moz-range-thumb]:rounded-full
+                    [&::-moz-range-thumb]:cursor-pointer
+                    [&::-moz-range-thumb]:border-0"
+                />
+              </div>
+            </>
+          )}
         </div>
         {!gameStart && <div><button onClick={handleStartGame} className="text-5xl">Click to Start</button></div>}
         
@@ -184,18 +243,5 @@ const Home: NextPage = () => {
     </>
   );
 };
-
-
-const Input = styled.input`
-  border-radius: 3px;
-  border: solid;
-  border-color: blue;
-`
-const Img = styled.img`
-transform-origin: center;
-
-animation: ${pulse} 0.3s infinite;
-`
-
 
 export default Home;
