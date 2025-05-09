@@ -3,7 +3,6 @@ import Head from "next/head";
 import { useEffect, useState } from "react";
 import { isEnglish , generateRule} from "../util/util";
 import {Howl} from 'howler';
-import styled, {keyframes} from "styled-components";
 
 const press = new Howl({
   src: ['/sounds/switch21.wav'],
@@ -19,86 +18,6 @@ const incorrect = new Howl({
   src: ['/sounds/incorrect.mp3'],
   volume: 1
 });
-
-const pulse = keyframes`
-  0% {
-    scale: 1;
-  }
-  90% {
-    scale: 1.15
-  }
-  100% {
-    scale: 1;
-  }
-`;
-
-const Img = styled.img`
-  transform-origin: center;
-  animation: ${pulse} 0.3s infinite;
-`;
-
-const VolumeSlider = styled.input`
-  width: 60px;
-  height: 4px;
-  -webkit-appearance: none;
-  background: #4a4a4a;
-  border-radius: 2px;
-  outline: none;
-  opacity: 0;
-  transition: opacity 0.2s;
-  position: absolute;
-  left: 40px;
-  z-index: 1;
-  
-  &::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 12px;
-    height: 12px;
-    background: white;
-    border-radius: 50%;
-    cursor: pointer;
-  }
-
-  &::-moz-range-thumb {
-    width: 12px;
-    height: 12px;
-    background: white;
-    border-radius: 50%;
-    cursor: pointer;
-    border: none;
-  }
-`;
-
-const VolumeButton = styled.button`
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  color: white;
-  font-size: 1.2rem;
-  transition: opacity 0.2s;
-  z-index: 2;
-
-  &:hover {
-    opacity: 0.8;
-  }
-`;
-
-const VolumeContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  cursor: pointer;
-  position: relative;
-  
-  &:hover ${VolumeSlider} {
-    opacity: 1;
-  }
-`;
 
 const Heart = (props: {health: number}) => {
   return <div className="flex gap-1">
@@ -250,10 +169,17 @@ const Home: NextPage = () => {
           {gameStart && !gameOver && <><div>Type an English word containing: {rule}</div><div>Time left: {timeLeft}</div> </>}
         </div>
         <div className=" m-x-auto mb-12" >
-        <Img style={{animationPlayState: (gameStart && !gameOver)   ? "running" : "paused"}} src="bomb.svg" width={"128px"}></Img>
+        <img 
+          src="bomb.svg" 
+          width={"128px"} 
+          className={`${(gameStart && !gameOver) ? "animate-tick" : ""}`}
+          style={{
+            display: "inline-block"
+          }}
+        />
         </div>
       
-        <div style={{minHeight: "24px"}} className="flex gap-1" >
+        <div className="h-12 flex items-center gap-1">
         {[...guess].map((element, key) => <div key={key} className="bg-gray-400 w-5 py-2 px-3 rounded-sm  font-bold  uppercase text-gray-800 flex align-middle justify-center">{element}</div>)}
         </div>
         <div className="flex justify-between w-96 mt-2 items-center">
@@ -261,15 +187,21 @@ const Home: NextPage = () => {
             <>
               <div>Health: <Heart health={health}/></div>
               <div>Points: {points}</div>
-              <VolumeContainer onClick={(e: React.MouseEvent) => {
-                if (!(e.target as HTMLElement).closest('button')) {
-                  handleMuteToggle();
-                }
-              }}>
-                <VolumeButton onClick={handleMuteToggle}>
+              <div 
+                className="relative flex items-center gap-2 p-2 cursor-pointer group"
+                onClick={(e: React.MouseEvent) => {
+                  if (!(e.target as HTMLElement).closest('button')) {
+                    handleMuteToggle();
+                  }
+                }}
+              >
+                <button 
+                  onClick={handleMuteToggle}
+                  className="text-xl hover:opacity-80 transition-opacity z-10"
+                >
                   {isMuted ? '🔇' : volume === 0 ? '🔈' : '🔊'}
-                </VolumeButton>
-                <VolumeSlider
+                </button>
+                <input
                   type="range"
                   min="0"
                   max="1"
@@ -283,8 +215,21 @@ const Home: NextPage = () => {
                     }
                   }}
                   onClick={(e) => e.stopPropagation()}
+                  className="absolute left-10 w-[60px] h-1 bg-gray-600 rounded-full appearance-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity
+                    [&::-webkit-slider-thumb]:appearance-none
+                    [&::-webkit-slider-thumb]:w-3
+                    [&::-webkit-slider-thumb]:h-3
+                    [&::-webkit-slider-thumb]:bg-white
+                    [&::-webkit-slider-thumb]:rounded-full
+                    [&::-webkit-slider-thumb]:cursor-pointer
+                    [&::-moz-range-thumb]:w-3
+                    [&::-moz-range-thumb]:h-3
+                    [&::-moz-range-thumb]:bg-white
+                    [&::-moz-range-thumb]:rounded-full
+                    [&::-moz-range-thumb]:cursor-pointer
+                    [&::-moz-range-thumb]:border-0"
                 />
-              </VolumeContainer>
+              </div>
             </>
           )}
         </div>
